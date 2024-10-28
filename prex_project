@@ -1,0 +1,80 @@
+from flask import Flask, jsonify, request # type: ignore
+import csv
+import os
+from datetime import datetime
+import psutil
+import platform
+import requests
+
+app = Flask(__name__)
+
+# Función para guardar datos en un CSV
+def guardar_en_csv(ip, data):
+    fecha_actual = datetime.now().strftime("%Y-%m-%d")
+    archivo_csv = f"{ip}_{fecha_actual}.csv"
+    
+    with open(archivo_csv, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([data])  # Guarda los datos como una fila
+
+# Función para recolectar información del sistema
+def collect_system_info():
+    cpu_info = {
+        "cpu_cores": psutil.cpu_count(logical=True),
+        "cpu_freq": psutil.cpu_freq()._asdict()
+    }
+    
+    processes = [proc.info for proc in psutil.process_iter(attrs=['pid', 'name'])]
+    
+    users = psutil.users()
+    
+    os_info = {
+        "os_name": platform.system(),
+        "os_version": platform.version()
+    }
+    
+    system_info = {
+        "cpu_info": cpu_info,
+        "running_processes": processes,
+        "logged_users": [user.name for user in users],
+        "os_info": os_info
+    }
+    
+    return system_info
+
+# Endpoint para enviar datos y guardarlos en un CSV
+@app.route('/api/enviar_datos', methods=['POST'])
+def enviar_datos():
+    contenido = request.json
+    ip = contenido.get("ip")
+    
+    if not ip:
+        return jsonify({"error": "IP es requerida."}), 400
+    
+    # Recolectar información del sistema
+    system_info = collect_system_info()
+    
+    # Agregar la IP a la información del sistema
+    system_info['ip'] = ip
+    
+    # Guardar en CSV
+    guardar_en_csv(ip, system_info)
+    
+    return jsonify({"mensaje": "Datos guardados correctamente.", "data": system_info}), 201
+
+# Endpoint para consultar datos por IP
+@app.route('/api/consultar_datos/<ip>', methods=['GET'])
+def consultar_datos(ip):
+    archivo_csv = f"{ip}_{datetime.now().strftime('%Y-%m-%d')}.csv"
+    
+    if not os.path.exists(archivo_csv):
+        return jsonify({"error": "No se encontraron datos para esta IP."}), 404
+
+    with open(archivo_csv, mode='r') as file:
+        reader = csv.reader(file)
+        datos = list(reader)
+
+    return jsonify({"datos": datos}), 200
+
+if __name__ == '__main__':
+    app.run(debug=True)
