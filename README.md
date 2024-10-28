@@ -3,7 +3,7 @@ Challenge cyber
 
 Instrucciones para la ejecución de la aplicación
 
-Para ejecutar la aplicación, primero instala las dependencias necesarias utilizando el comando pip install psutil requests flask. Luego, inicia el servidor ejecutando python app.py en la terminal. Asegúrate de que tu API esté corriendo en http://127.0.0.1:5000.
+Para ejecutar la aplicación, primero se instala las dependencias necesarias utilizando el comando pip install psutil requests flask. Luego, se inicia el servidor ejecutando python prex_project.py en la terminal. Se debe asegurar de que la API esté corriendo en http://127.0.0.1:5000.
 
 Descripción de la aplicación realizada
 
